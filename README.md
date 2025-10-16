@@ -1,2 +1,5 @@
 # RideMate
 “Share the Ride. Save Time. Build Community.”
+
+Problem Statement:
+Many commuters—including elderly people, women, and students—face long, unsafe, costly, and inefficient daily journeys on public transport. Women especially experience frequent harassment and safety concerns, with over half reporting incidents while commuting. Elderly and disabled individuals often encounter accessibility and security challenges. Public transport is often overcrowded, unreliable, and expensive, disproportionately affecting vulnerable groups. Meanwhile, private vehicles traveling the same routes have empty seats unused. This leads to increased pollution, commute times, and financial burdens. Existing options lack sufficient safety features, identity verification, and convenience. Our solution is a trusted peer-to-peer ride-sharing platform that matches verified drivers and commuters traveling similar routes. It offers in-app payments, emergency safety features, and incentives to promote sharing rides. This reduces travel costs, commute time, safety risks, and carbon emissions while making daily travel safer and more affordable for everyone.

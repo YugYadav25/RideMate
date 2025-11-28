@@ -1,12 +1,4 @@
-import { ArrowRight, Shield, Globe, Zap, Smartphone, Users, Layers, MapPin, ShieldCheck, Lock, Eye, AlertTriangle } from 'lucide-react';
-import { useApp } from '../context/AppContext';
-import Button from '../components/Button';
-import CustomCursor from '../components/CustomCursor/CustomCursor';
-import RollingReviews from '../components/RollingReviews/RollingReviews';
-import AnimatedSection from '../components/AnimatedSection/AnimatedSection';
-import Footer from '../components/Footer';
-import '../styles/landing.css';
-import { useState } from 'react';
+
 
 export default function Landing() {
   const { navigateTo, authToken } = useApp();

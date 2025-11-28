@@ -12,7 +12,7 @@ const AccessibilityContext = createContext<AccessibilityContextType | undefined>
 export const AccessibilityProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [isVoiceCommandMode, setIsVoiceCommandMode] = useState<boolean>(() => {
         const savedMode = localStorage.getItem('voiceCommandMode');
-        return savedMode === 'true';
+        return savedMode !== null ? savedMode === 'true' : true; // Default to true
     });
 
     const [isSeniorMode, setIsSeniorMode] = useState<boolean>(() => {

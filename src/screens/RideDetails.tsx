@@ -12,6 +12,7 @@ import {
   X,
   Car,
   CheckCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
@@ -505,7 +506,12 @@ export default function RideDetails() {
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h2 className="text-2xl font-bold text-black mb-1">{ride.driver.name}</h2>
+                    <h2 className="text-2xl font-bold text-black mb-1 flex items-center gap-2">
+                      {ride.driver?.name}
+                      {ride.driver?.verificationStatus === 'verified' && (
+                        <ShieldCheck size={20} className="text-green-600" fill="currentColor" stroke="white" />
+                      )}
+                    </h2>
                     <span
                       className={`px-3 py-1 text-xs font-semibold uppercase tracking-wide rounded-full border ${rideStatus === 'Completed' ? 'border-green-600 text-green-600' : 'border-black text-black'
                         }`}
@@ -578,21 +584,11 @@ export default function RideDetails() {
                       <p className="font-bold text-black">{rideMetrics.durationMinutes} min</p>
                     </div>
                     <div className="p-2 bg-gray-50 rounded-lg">
-                      <p className="text-xs text-gray-500">Price</p>
-                      <p className="font-bold text-black">Rs {rideMetrics.cost}</p>
+                      <p className="text-xs text-gray-500">Seats</p>
+                      <p className="font-bold text-black">{Math.max(ride.seats.available, 0)} / {ride.seats.total}</p>
                     </div>
                   </div>
                 )}
-
-                <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                  <div className="flex items-center">
-                    <Users size={20} className="text-black mr-2" />
-                    <span className="font-medium text-gray-700">Seats Available</span>
-                  </div>
-                  <span className="text-xl font-bold text-black">
-                    {Math.max(ride.seats.available, 0)} / {ride.seats.total}
-                  </span>
-                </div>
               </div>
             </Card>
 
@@ -717,209 +713,197 @@ export default function RideDetails() {
                   {/* Status banner moved to top */}
                 </>
               )}
-
-              {/* Non-Driver / Non-Participant - Total Cost beside Chat */}
-              {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && rideMetrics && (
-                <div className="bg-black text-white rounded-xl flex justify-between items-center px-6 py-4 border-2 border-black h-full">
-                  <span className="font-semibold text-base">Total Cost:</span>
-                  <span className="text-xl font-bold">
-                    Rs {rideMetrics.cost.toFixed(2)}
-                  </span>
+              {ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && rideStatus === 'Completed' && (
+                <div className="mt-6 p-6 border-2 border-black rounded-xl bg-white shadow-sm">
+                  <p className="text-lg font-bold text-black mb-4 text-center">Rate your Driver</p>
+                  <div className="flex justify-center gap-3">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={`driver-rate-${star}`}
+                        onClick={() => handleRateDriver(star)}
+                        className="hover:scale-110 transition-transform disabled:opacity-50 p-1"
+                        disabled={hasRatedDriver}
+                        title={hasRatedDriver ? 'You already rated your driver' : `Give ${star} star${star > 1 ? 's' : ''}`}
+                      >
+                        <Star
+                          size={40}
+                          className={`${driverRatingValue >= star ? 'text-black fill-black' : 'text-gray-300'}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {hasRatedDriver && (
+                    <p className="text-center text-sm font-medium text-green-600 mt-4 bg-green-50 py-2 rounded-lg border border-green-200 inline-block px-6 mx-auto block w-fit">
+                      Thanks for sharing your feedback!
+                    </p>
+                  )}
                 </div>
               )}
-            </div>
 
-            {/* Rate Driver - Full Width */}
-            {ride.participants?.some(p => p.rider?.id === userId && (p.status === 'Accepted' || p.status === 'Approved' || p.status === 'Confirmed')) && rideStatus === 'Completed' && (
-              <div className="mt-6 p-6 border-2 border-black rounded-xl bg-white shadow-sm">
-                <p className="text-lg font-bold text-black mb-4 text-center">Rate your Driver</p>
-                <div className="flex justify-center gap-3">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={`driver-rate-${star}`}
-                      onClick={() => handleRateDriver(star)}
-                      className="hover:scale-110 transition-transform disabled:opacity-50 p-1"
-                      disabled={hasRatedDriver}
-                      title={hasRatedDriver ? 'You already rated your driver' : `Give ${star} star${star > 1 ? 's' : ''}`}
+              {/* Non-Driver / Non-Participant - Request Button */}
+              {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
+                <div className="mt-4">
+                  {ride.requests?.some(r => r.rider?.id === userId && r.status === 'PaymentPending') ? (
+                    <Button
+                      fullWidth
+                      onClick={() => navigateTo('payment')}
+                      className="bg-orange-500 hover:bg-orange-600 text-white text-lg py-4"
                     >
-                      <Star
-                        size={40}
-                        className={`${driverRatingValue >= star ? 'text-black fill-black' : 'text-gray-300'}`}
-                      />
-                    </button>
-                  ))}
+                      Pay Now to Confirm
+                    </Button>
+                  ) : (
+                    <Button
+                      fullWidth
+                      onClick={handleBookRideFromDetails}
+                      disabled={hasRequested || ride.seats.available === 0}
+                      variant={hasRequested ? 'secondary' : 'primary'}
+                      className="text-lg py-4"
+                    >
+                      {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : `Request ${seatsRequested} Seat${seatsRequested > 1 ? 's' : ''}`}
+                    </Button>
+                  )}
                 </div>
-                {hasRatedDriver && (
-                  <p className="text-center text-sm font-medium text-green-600 mt-4 bg-green-50 py-2 rounded-lg border border-green-200 inline-block px-6 mx-auto block w-fit">
-                    Thanks for sharing your feedback!
-                  </p>
-                )}
-              </div>
-            )}
+              )}
 
-            {/* Non-Driver / Non-Participant - Request Button */}
-            {userRole !== 'driver' && !ride.participants?.some(p => p.rider?.id === userId) && (
-              <div className="mt-4">
-                {ride.requests?.some(r => r.rider?.id === userId && r.status === 'PaymentPending') ? (
-                  <Button
-                    fullWidth
-                    onClick={() => navigateTo('payment')}
-                    className="bg-orange-500 hover:bg-orange-600 text-white text-lg py-4"
-                  >
-                    Pay Now to Confirm
-                  </Button>
-                ) : (
-                  <Button
-                    fullWidth
-                    onClick={handleBookRideFromDetails}
-                    disabled={hasRequested || ride.seats.available === 0}
-                    variant={hasRequested ? 'secondary' : 'primary'}
-                    className="text-lg py-4"
-                  >
-                    {hasRequested ? 'Request Sent' : ride.seats.available === 0 ? 'Full' : `Request ${seatsRequested} Seat${seatsRequested > 1 ? 's' : ''}`}
-                  </Button>
-                )}
-              </div>
-            )}
-
-            {userRole === 'driver' && (
-              <>
-                <Card className="mb-6">
-                  <h3 className="text-2xl font-bold mb-4 text-black">Riders Joined</h3>
-                  <div className="space-y-3">
-                    {ride.participants && ride.participants.length > 0 ? (
-                      ride.participants.map((participant, index) => (
-                        <div key={participant.rider?.id || index} className="p-4 border-2 border-black rounded-lg bg-green-50">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="font-bold text-black">{participant.name}</p>
-                              <p className="text-sm text-gray-600 mt-1">
-                                Seats: {participant.seatsBooked} • Status: {participant.status}
-                              </p>
-                              {participant.rider?.email && (
-                                <p className="text-xs text-gray-500 mt-1">Email: {participant.rider.email}</p>
-                              )}
-                              {participant.rider?.phone && (
-                                <p className="text-xs text-gray-500">Phone: {participant.rider.phone}</p>
-                              )}
-                            </div>
-                            <span className="px-3 py-1 text-sm font-medium rounded-full border-2 border-green-600 bg-green-600 text-white">
-                              Confirmed
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-gray-600 text-center py-4">No riders have joined yet.</p>
-                    )}
-                  </div>
-                </Card>
-
-                <Card className="mb-6">
-                  <h3 className="text-2xl font-bold mb-4 text-black">Rider Requests</h3>
-                  <div className="space-y-3">
-                    {ride.requests && ride.requests.length > 0 && (
-                      ride.requests.map((request) => (
-                        <div key={request._id} className="p-4 border-2 border-black rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="font-bold text-black">{request.name}</p>
-                              <div className="flex items-center mt-1">
-                                <Star size={14} className="text-black fill-black mr-1" />
-                                <span className="text-sm">{request.rating}</span>
-                              </div>
-                            </div>
-                            <span
-                              className={`px-3 py-1 text-sm font-medium rounded-full border-2 border-black ${request.status === 'Approved' ? 'bg-black text-white' : 'bg-white text-black'
-                                }`}
-                            >
-                              {request.status}
-                            </span>
-                          </div>
-
-                          {request.status === 'Pending' && (
-                            <div className="mt-4">
-                              <Button
-                                size="sm"
-                                onClick={() => setSelectedRequest(request)}
-                                fullWidth
-                              >
-                                Review Profile & Request
-                              </Button>
-                            </div>
-                          )}
-                          {request.status === 'Approved' && rideStatus === 'Completed' && userRole === 'driver' && ride.driver.id === userId && (
-                            <div className="mt-4 border-t border-gray-200 pt-3">
-                              <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center justify-between">
-                                Rate {request.name}
-                                {request.driverRated && (
-                                  <span className="text-green-600 font-bold text-[11px] uppercase tracking-wider">
-                                    Rated
-                                  </span>
-                                )}
-                              </p>
-                              {request.driverRated ? (
-                                <p className="text-xs text-green-600 font-semibold">
-                                  You already rated this rider. Thank you!
+              {userRole === 'driver' && (
+                <>
+                  <Card className="mb-6">
+                    <h3 className="text-2xl font-bold mb-4 text-black">Riders Joined</h3>
+                    <div className="space-y-3">
+                      {ride.participants && ride.participants.length > 0 ? (
+                        ride.participants.map((participant, index) => (
+                          <div key={participant.rider?.id || index} className="p-4 border-2 border-black rounded-lg bg-green-50">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-bold text-black">{participant.name}</p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Seats: {participant.seatsBooked} • Status: {participant.status}
                                 </p>
-                              ) : (
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
-                                      key={`${request._id}-${star}`}
-                                      type="button"
-                                      onClick={() => handleDriverRateRider(request._id, request.rider?.id, star)}
-                                      className="transition-transform duration-150 hover:scale-110 disabled:opacity-50"
-                                      disabled={driverRatingLoading === request._id}
-                                      title={`Give ${star} star${star > 1 ? 's' : ''}`}
-                                    >
-                                      <Star
-                                        size={28}
-                                        className={`${star <= (driverRatings[request._id] || 0)
-                                          ? 'text-black fill-black'
-                                          : 'text-gray-300'
-                                          }`}
-                                      />
-                                    </button>
-                                  ))}
-                                  {driverRatingLoading === request._id && (
-                                    <span className="text-xs text-gray-500">Saving...</span>
-                                  )}
-                                </div>
-                              )}
+                                {participant.rider?.email && (
+                                  <p className="text-xs text-gray-500 mt-1">Email: {participant.rider.email}</p>
+                                )}
+                                {participant.rider?.phone && (
+                                  <p className="text-xs text-gray-500">Phone: {participant.rider.phone}</p>
+                                )}
+                              </div>
+                              <span className="px-3 py-1 text-sm font-medium rounded-full border-2 border-green-600 bg-green-600 text-white">
+                                Confirmed
+                              </span>
                             </div>
-                          )}
-                          <div className="mt-2 text-xs text-gray-600">
-                            Seats requested: {request.seatsRequested || 1}
                           </div>
-                        </div>
-                      )))}
-                    {(!ride.requests || ride.requests.length === 0) && (
-                      <p className="text-gray-600 text-center py-4">No pending requests.</p>
-                    )}
-                  </div>
-                </Card>
-              </>
-            )}
+                        ))
+                      ) : (
+                        <p className="text-gray-600 text-center py-4">No riders have joined yet.</p>
+                      )}
+                    </div>
+                  </Card>
 
-            <div className="mt-6 flex flex-col gap-3">
-              {rideStatus === 'Completed' && (
-                <div className="space-y-3">
-                  <div className="rounded-2xl border border-green-500 bg-green-50 p-4 text-sm text-green-700">
-                    Ride marked as complete. Chat history cleared.
+                  <Card className="mb-6">
+                    <h3 className="text-2xl font-bold mb-4 text-black">Rider Requests</h3>
+                    <div className="space-y-3">
+                      {ride.requests && ride.requests.length > 0 && (
+                        ride.requests.map((request) => (
+                          <div key={request._id} className="p-4 border-2 border-black rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-bold text-black">{request.name}</p>
+                                <div className="flex items-center mt-1">
+                                  <Star size={14} className="text-black fill-black mr-1" />
+                                  <span className="text-sm">{request.rating}</span>
+                                </div>
+                              </div>
+                              <span
+                                className={`px-3 py-1 text-sm font-medium rounded-full border-2 border-black ${request.status === 'Approved' ? 'bg-black text-white' : 'bg-white text-black'
+                                  }`}
+                              >
+                                {request.status}
+                              </span>
+                            </div>
+
+                            {request.status === 'Pending' && (
+                              <div className="mt-4">
+                                <Button
+                                  size="sm"
+                                  onClick={() => setSelectedRequest(request)}
+                                  fullWidth
+                                >
+                                  Review Profile & Request
+                                </Button>
+                              </div>
+                            )}
+                            {request.status === 'Approved' && rideStatus === 'Completed' && userRole === 'driver' && ride.driver.id === userId && (
+                              <div className="mt-4 border-t border-gray-200 pt-3">
+                                <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center justify-between">
+                                  Rate {request.name}
+                                  {request.driverRated && (
+                                    <span className="text-green-600 font-bold text-[11px] uppercase tracking-wider">
+                                      Rated
+                                    </span>
+                                  )}
+                                </p>
+                                {request.driverRated ? (
+                                  <p className="text-xs text-green-600 font-semibold">
+                                    You already rated this rider. Thank you!
+                                  </p>
+                                ) : (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <button
+                                        key={`${request._id}-${star}`}
+                                        type="button"
+                                        onClick={() => handleDriverRateRider(request._id, request.rider?.id, star)}
+                                        className="transition-transform duration-150 hover:scale-110 disabled:opacity-50"
+                                        disabled={driverRatingLoading === request._id}
+                                        title={`Give ${star} star${star > 1 ? 's' : ''}`}
+                                      >
+                                        <Star
+                                          size={28}
+                                          className={`${star <= (driverRatings[request._id] || 0)
+                                            ? 'text-black fill-black'
+                                            : 'text-gray-300'
+                                            }`}
+                                        />
+                                      </button>
+                                    ))}
+                                    {driverRatingLoading === request._id && (
+                                      <span className="text-xs text-gray-500">Saving...</span>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            <div className="mt-2 text-xs text-gray-600">
+                              Seats requested: {request.seatsRequested || 1}
+                            </div>
+                          </div>
+                        )))}
+                      {(!ride.requests || ride.requests.length === 0) && (
+                        <p className="text-gray-600 text-center py-4">No pending requests.</p>
+                      )}
+                    </div>
+                  </Card>
+                </>
+              )}
+
+              <div className="mt-6 flex flex-col gap-3">
+                {rideStatus === 'Completed' && (
+                  <div className="space-y-3">
+                    <div className="rounded-2xl border border-green-500 bg-green-50 p-4 text-sm text-green-700">
+                      Ride marked as complete. Chat history cleared.
+                    </div>
                   </div>
+                )}
+              </div>
+
+              {/* Driver Only - Delete Ride */}
+              {userRole === 'driver' && ride.driver.id === userId && rideStatus === 'Completed' && (
+                <div className="mt-6">
+                  <Button fullWidth variant="outline" onClick={handleDeleteRide} className="border-red-500 text-red-600 hover:bg-red-50">
+                    Delete Ride from History
+                  </Button>
                 </div>
               )}
             </div>
-
-            {/* Driver Only - Delete Ride */}
-            {userRole === 'driver' && ride.driver.id === userId && rideStatus === 'Completed' && (
-              <div className="mt-6">
-                <Button fullWidth variant="outline" onClick={handleDeleteRide} className="border-red-500 text-red-600 hover:bg-red-50">
-                  Delete Ride from History
-                </Button>
-              </div>
-            )}
 
           </>
         ) : null}
@@ -1109,6 +1093,6 @@ export default function RideDetails() {
           />
         )
       }
-    </div >
+    </div>
   );
 }

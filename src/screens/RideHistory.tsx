@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, MapPin, Calendar, Star, Users, Car, Trash2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Star, Users, Car, Trash2, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Card from '../components/Card';
 import { rideApi, Ride } from '../services/rides';
@@ -128,8 +128,13 @@ export default function RideHistory() {
 
                 <div className="pt-4 border-t-2 border-gray-200">
                   <div className="flex justify-between items-center mb-2">
-                    <p className="text-sm text-gray-600">
-                      Driver: <span className="font-bold text-black">{ride.driver?.name}</span>
+                    <p className="text-sm text-gray-600 flex items-center gap-1">
+                      Driver: <span className="font-bold text-black flex items-center gap-1">
+                        {ride.driver?.name}
+                        {ride.driver?.verificationStatus === 'verified' && (
+                          <ShieldCheck size={14} className="text-green-600" fill="currentColor" stroke="white" />
+                        )}
+                      </span>
                     </p>
                     <span className="text-xs text-gray-500">
                       {new Date(ride.createdAt).toLocaleDateString()}

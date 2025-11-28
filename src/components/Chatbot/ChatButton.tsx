@@ -29,7 +29,7 @@ const ChatButton: React.FC<ChatButtonProps> = ({ onClick, isOpen }) => {
                 }
                 `}
             </style>
-            <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ position: 'fixed', bottom: '32px', right: '32px', zIndex: 9999, display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div
                     style={{
                         backgroundColor: 'black',

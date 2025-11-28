@@ -175,15 +175,14 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   }, [authToken]);
 
   const navigateTo = (screen: string, state?: any) => {
+    if (state) {
+      (window as any).__navigationState = state;
+      window.dispatchEvent(new Event('navigation-state-change'));
+    }
+
     if (screen !== currentScreen) {
       setHistory(prev => [...prev, screen]);
       setCurrentScreen(screen);
-      if (state) {
-        // Store state in a temporary way or extend currentScreen to support it
-        // For simplicity, we'll attach it to the window object or use a separate state
-        // A better approach would be to have a navigation state object
-        (window as any).__navigationState = state;
-      }
     }
   };
 

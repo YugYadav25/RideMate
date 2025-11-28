@@ -119,6 +119,36 @@ const rideSchema = new mongoose.Schema(
       required: [true, 'Price is required'],
       min: [0, 'Price must be positive'],
     },
+    basePrice: {
+      type: Number,
+      min: [0, 'Base price must be positive'],
+    },
+    weatherSurcharge: {
+      type: Number,
+      default: 0,
+      min: [0, 'Weather surcharge must be positive'],
+    },
+    weatherData: {
+      startWeather: {
+        condition: String,
+        isBad: { type: Boolean, default: false },
+        temperature: Number,
+        precipitation: Number,
+        windSpeed: Number,
+        visibility: Number,
+        weatherCode: Number,
+      },
+      destWeather: {
+        condition: String,
+        isBad: { type: Boolean, default: false },
+        temperature: Number,
+        precipitation: Number,
+        windSpeed: Number,
+        visibility: Number,
+        weatherCode: Number,
+      },
+      hasBadWeather: { type: Boolean, default: false },
+    },
     seatsAvailable: {
       type: Number,
       required: [true, 'Seats available is required'],

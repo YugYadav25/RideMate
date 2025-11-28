@@ -60,6 +60,7 @@ export type User = {
   rating?: number;
   co2Saved?: number;
   greenPoints?: number;
+  verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
 };
 
 export type AuthResponse = {

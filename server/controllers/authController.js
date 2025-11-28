@@ -117,6 +117,7 @@ const register = async (req, res, next) => {
         rating: user.rating,
         co2Saved: user.co2Saved,
         greenPoints: user.greenPoints,
+        verificationStatus: user.verificationStatus,
       },
     });
   } catch (error) {
@@ -188,6 +189,7 @@ const login = async (req, res, next) => {
         rating: user.rating,
         co2Saved: user.co2Saved,
         greenPoints: user.greenPoints,
+        verificationStatus: user.verificationStatus,
       },
     });
   } catch (error) {
@@ -223,6 +225,7 @@ const getMe = async (req, res, next) => {
         rating: user.rating,
         co2Saved: user.co2Saved,
         greenPoints: user.greenPoints,
+        verificationStatus: user.verificationStatus,
       },
     });
   } catch (error) {
@@ -293,6 +296,7 @@ const updateProfile = async (req, res, next) => {
         rating: user.rating,
         co2Saved: user.co2Saved,
         greenPoints: user.greenPoints,
+        verificationStatus: user.verificationStatus,
       },
     });
   } catch (error) {

@@ -6,6 +6,7 @@ const { validateRideInput } = require('../utils/validate');
 const { geocode } = require('../utils/geocoding');
 const { createNotification } = require('./notificationController');
 const { haversineDistanceKm } = require('../utils/distance');
+const { getWeatherForRide } = require('../services/weatherService');
 
 const parseRideDateTime = (dateStr, timeStr) => {
   if (!dateStr || !timeStr) return null;
@@ -178,6 +179,13 @@ const transformRide = (ride) => {
       available: rideObj.seatsAvailable || 0,
     },
     notes: rideObj.notes || '',
+    basePrice: rideObj.basePrice || rideObj.price || 0,
+    weatherSurcharge: rideObj.weatherSurcharge || 0,
+    weatherData: rideObj.weatherData ? {
+      startWeather: rideObj.weatherData.startWeather || null,
+      destWeather: rideObj.weatherData.destWeather || null,
+      hasBadWeather: rideObj.weatherData.hasBadWeather || false,
+    } : null,
     requests: (rideObj.requests || []).map(req => ({
       _id: req._id?.toString() || '',
       rider: req.rider?._id ? {
@@ -406,6 +414,37 @@ const createRide = async (req, res, next) => {
       });
     }
 
+    // Fetch weather data for both start and destination
+    const startLat = startCoordsGeoJSON.coordinates[1];
+    const startLng = startCoordsGeoJSON.coordinates[0];
+    const destLat = destCoordsGeoJSON.coordinates[1];
+    const destLng = destCoordsGeoJSON.coordinates[0];
+
+    let weatherInfo = null;
+    let weatherSurcharge = 0;
+    let basePrice = parseFloat(price);
+
+    try {
+      weatherInfo = await getWeatherForRide(startLat, startLng, destLat, destLng);
+
+      // Apply 15% surcharge if bad weather detected
+      if (weatherInfo.hasBadWeather) {
+        weatherSurcharge = basePrice * 0.15;
+        console.log(`[Ride] Bad weather detected. Applying 15% surcharge: ₹${weatherSurcharge.toFixed(2)}`);
+      }
+    } catch (weatherError) {
+      console.error('[Ride] Weather fetch error:', weatherError.message);
+      // Continue without weather data - don't block ride creation
+      weatherInfo = {
+        startWeather: { condition: 'Unknown', isBad: false },
+        destWeather: { condition: 'Unknown', isBad: false },
+        hasBadWeather: false,
+      };
+    }
+
+    // Final price includes weather surcharge
+    const finalPrice = basePrice + weatherSurcharge;
+
     const ride = await Ride.create({
       driver: req.user.id,
       from: from.trim(),
@@ -415,7 +454,14 @@ const createRide = async (req, res, next) => {
       date: req.body.date,
       time: req.body.time,
       duration: parseFloat(req.body.duration || 2),
-      price: parseFloat(price),
+      price: finalPrice,
+      basePrice: basePrice,
+      weatherSurcharge: weatherSurcharge,
+      weatherData: weatherInfo ? {
+        startWeather: weatherInfo.startWeather,
+        destWeather: weatherInfo.destWeather,
+        hasBadWeather: weatherInfo.hasBadWeather,
+      } : undefined,
       seatsAvailable: parseInt(seats),
       notes: req.body.notes || '',
       requests: [],
@@ -430,7 +476,7 @@ const createRide = async (req, res, next) => {
       select: 'name email phone role verificationStatus',
     }).populate('vehicle');
 
-    console.log(`[Ride] Created successfully: ${ride._id}`);
+    console.log(`[Ride] Created successfully: ${ride._id}${weatherSurcharge > 0 ? ` (Weather surcharge: ₹${weatherSurcharge.toFixed(2)})` : ''}`);
 
     res.status(201).json(transformRide(populatedRide));
   } catch (error) {

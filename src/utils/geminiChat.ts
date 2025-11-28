@@ -1,8 +1,6 @@
-import { rideApi } from '../services/rides';
-
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
 
-export async function askGemini(message: string, context: string = ""): Promise<string> {
+export async function askGemini(message: string): Promise<string> {
   try {
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -30,19 +28,20 @@ export async function askGemini(message: string, context: string = ""): Promise<
   }
 }
 
-export async function classifyDomain(message: string): Promise<"domain" | "external"> {
+export async function classifyDomain(): Promise<"domain" | "external"> {
   // For now, we'll assume all messages are domain-relevant to simplify
   // In a real app, we could have a lightweight classifier or just send everything to backend
   return "domain";
 }
 
 export interface VoiceCommandResponse {
-  intent: 'BOOK_RIDE' | 'NAVIGATE' | 'UNKNOWN';
+  intent: 'BOOK_RIDE' | 'OFFER_RIDE' | 'NAVIGATE' | 'UNKNOWN';
   entities?: {
     origin?: string;
     destination?: string;
     date?: string;
     time?: string;
+    seats?: string;
     screen?: string;
   };
   message?: string;
@@ -57,18 +56,20 @@ export async function parseVoiceCommand(text: string): Promise<VoiceCommandRespo
       Command: "${text}"
       
       Possible Intents:
-      - BOOK_RIDE: User wants to book a ride, find a ride, or go somewhere.
+      - BOOK_RIDE: User wants to book a ride, find a ride, or go somewhere (Rider).
+      - OFFER_RIDE: User wants to offer a ride, create a ride, or drive somewhere (Driver).
       - NAVIGATE: User wants to go to a specific screen (e.g., dashboard, profile, history).
       - UNKNOWN: Command is not understood or irrelevant.
       
       Return ONLY a JSON object with the following structure (no markdown):
       {
-        "intent": "BOOK_RIDE" | "NAVIGATE" | "UNKNOWN",
+        "intent": "BOOK_RIDE" | "OFFER_RIDE" | "NAVIGATE" | "UNKNOWN",
         "entities": {
           "origin": "extracted origin location (optional)",
           "destination": "extracted destination location (optional)",
-          "date": "extracted date (optional)",
-          "time": "extracted time (optional)",
+          "date": "extracted date (YYYY-MM-DD format if possible, or natural language)",
+          "time": "extracted time (strictly 24-hour HH:MM format, e.g., 17:00 for 5 PM)",
+          "seats": "extracted number of seats/riders (number)",
           "screen": "extracted screen name (only for NAVIGATE intent)"
         },
         "message": "A short, natural language response to the user confirming the action"

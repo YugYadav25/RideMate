@@ -1,3 +1,5 @@
+import type { WeatherData } from './weather';
+
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
 
 // Log API base URL in development (helps debug configuration issues)
@@ -75,6 +77,7 @@ export type Ride = {
     id: string;
     name: string;
     rating: number;
+    verificationStatus?: 'unverified' | 'pending' | 'verified' | 'rejected';
   };
   start: {
     label: string;
@@ -133,6 +136,8 @@ export type Ride = {
     type: '2-wheeler' | '3-wheeler' | '4-wheeler';
     seatingLimit: number;
   } | null;
+  weatherData?: WeatherData | null;
+  weatherSurcharge?: number;
   createdAt: string;
   updatedAt: string;
 };

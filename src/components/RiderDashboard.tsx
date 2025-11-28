@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { bookingApi, Booking } from '../services/bookings';
 import Card from './Card';
-import { User, Car } from 'lucide-react';
+import { User, Car, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { rideApi, Ride } from '../services/rides';
 import { calculateRideDetails, RideDetails as RideMetrics } from '../utils/rideCalculations';
@@ -194,6 +194,9 @@ export default function RiderDashboard() {
                                     <div className="flex items-center">
                                         <User size={16} className="mr-1" />
                                         Driver: {ongoingRide.ride.driver?.name}
+                                        {ongoingRide.ride.driver?.verificationStatus === 'verified' && (
+                                            <ShieldCheck size={14} className="text-green-600 ml-1" fill="currentColor" stroke="white" />
+                                        )}
                                     </div>
                                     <div className="flex items-center">
                                         <Car size={16} className="mr-1" />
@@ -233,6 +236,9 @@ export default function RiderDashboard() {
                                                 <div className="flex items-center">
                                                     <User size={16} className="mr-1" />
                                                     {ride.driver.name}
+                                                    {ride.driver.verificationStatus === 'verified' && (
+                                                        <ShieldCheck size={14} className="text-green-600 ml-1" fill="currentColor" stroke="white" />
+                                                    )}
                                                 </div>
                                                 <div className="flex items-center">
                                                     <Car size={16} className="mr-1" />
@@ -242,12 +248,12 @@ export default function RiderDashboard() {
                                         </div>
                                         <div className="text-right">
                                             <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${isPaymentPending
-                                                    ? 'bg-orange-50 text-orange-600 border-orange-200'
-                                                    : myRequest?.status === 'Approved'
-                                                        ? 'bg-green-50 text-green-600 border-green-200'
-                                                        : myRequest?.status === 'Rejected'
-                                                            ? 'bg-red-50 text-red-600 border-red-200'
-                                                            : 'bg-yellow-50 text-yellow-600 border-yellow-200'
+                                                ? 'bg-orange-50 text-orange-600 border-orange-200'
+                                                : myRequest?.status === 'Approved'
+                                                    ? 'bg-green-50 text-green-600 border-green-200'
+                                                    : myRequest?.status === 'Rejected'
+                                                        ? 'bg-red-50 text-red-600 border-red-200'
+                                                        : 'bg-yellow-50 text-yellow-600 border-yellow-200'
                                                 }`}>
                                                 {isPaymentPending ? 'Payment Pending' : myRequest?.status || 'Pending'}
                                             </span>
@@ -336,7 +342,12 @@ export default function RiderDashboard() {
                                         <div className="flex items-center gap-4 text-sm text-gray-700 mt-3">
                                             <div className="flex items-center gap-1">
                                                 <User size={16} />
-                                                <span className="font-semibold">{booking.ride.driver?.name}</span>
+                                                <span className="font-semibold flex items-center gap-1">
+                                                    {booking.ride.driver?.name}
+                                                    {booking.ride.driver?.verificationStatus === 'verified' && (
+                                                        <ShieldCheck size={14} className="text-green-600" fill="currentColor" stroke="white" />
+                                                    )}
+                                                </span>
                                             </div>
                                             {booking.ride.vehicle && (
                                                 <div className="flex items-center gap-1">

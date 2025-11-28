@@ -55,20 +55,12 @@ export default function Landing() {
 
           {/* Auth Buttons - Right */}
           <div className="flex items-center gap-3 justify-end">
-            {authToken ? (
-              <Button onClick={() => { }} size="sm" className="cursor-default opacity-50">
-                Dashboard
-              </Button>
-            ) : (
-              <>
-                <button onClick={() => navigateTo('login')} className="text-base font-medium hover:text-gray-600 transition-colors cursor-hover px-3 py-2">
-                  Log in
-                </button>
-                <Button onClick={() => navigateTo('signup')} size="lg" className="bg-black text-white hover:bg-gray-800 cursor-hover px-5 py-2.5 text-base">
-                  Sign up
-                </Button>
-              </>
-            )}
+            <button onClick={() => navigateTo('login')} className="text-base font-medium hover:text-gray-600 transition-colors cursor-hover px-3 py-2">
+              Log in
+            </button>
+            <Button onClick={() => navigateTo('signup')} size="lg" className="bg-black text-white hover:bg-gray-800 cursor-hover px-5 py-2.5 text-base">
+              Sign up
+            </Button>
           </div>
         </div>
       </header>

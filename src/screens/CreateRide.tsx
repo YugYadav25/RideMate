@@ -37,18 +37,24 @@ export default function CreateRide() {
   // ... inside component ...
   const [activePicker, setActivePicker] = useState<'date' | 'time' | null>(null);
 
-  useEffect(() => {
-    // Check for navigation state
+  const checkNavigationState = () => {
     const navState = (window as any).__navigationState;
     if (navState) {
       if (navState.startLocation) setStartLocation(navState.startLocation);
       if (navState.destinationLocation) setDestinationLocation(navState.destinationLocation);
       if (navState.date) setDate(navState.date);
       if (navState.time) setTime(navState.time);
+      if (navState.seats) setSeats(String(navState.seats));
 
       // Clear state after use
       (window as any).__navigationState = null;
     }
+  };
+
+  useEffect(() => {
+    checkNavigationState();
+    window.addEventListener('navigation-state-change', checkNavigationState);
+    return () => window.removeEventListener('navigation-state-change', checkNavigationState);
   }, []);
 
   const handleCreate = async (e: React.FormEvent) => {

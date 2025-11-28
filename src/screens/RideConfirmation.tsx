@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, CloudRain } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Button from '../components/Button';
 import MiniMap from '../components/MiniMap';
@@ -11,6 +11,7 @@ export default function RideConfirmation() {
   const [estimates, setEstimates] = useState<RideDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [demoWeatherMode, setDemoWeatherMode] = useState(false);
 
   useEffect(() => {
     if (!rideSummaryInput) {
@@ -57,7 +58,7 @@ export default function RideConfirmation() {
       return [
         { label: 'Distance', value: 'Calculating...' },
         { label: 'Time', value: 'Calculating...' },
-        { label: 'Ride Cost', value: 'Calculating...' },
+        { label: 'Price Per Person', value: 'Calculating...' },
         { label: 'Driver Earning', value: 'Calculating...' },
         { label: 'Platform Fee', value: 'Calculating...' },
       ];
@@ -67,16 +68,25 @@ export default function RideConfirmation() {
       return [
         { label: 'Distance', value: '--', helper: error || undefined },
         { label: 'Time', value: '--' },
-        { label: 'Ride Cost', value: '₹ --' },
+        { label: 'Price Per Person', value: '₹ --' },
         { label: 'Driver Earning', value: '₹ --' },
         { label: 'Platform Fee', value: '₹ --' },
       ];
     }
 
+    // Calculate per-person pricing
+    const pricePerPerson = estimates.pricePerRider;
+    const weatherSurcharge = demoWeatherMode ? pricePerPerson * 0.15 : 0;
+    const finalPricePerPerson = pricePerPerson + weatherSurcharge;
+
     return [
       { label: 'Distance', value: `${estimates.distanceKm} km`, helper: 'Road distance' },
       { label: 'Time', value: `${estimates.durationMinutes} mins`, helper: 'Estimated travel time' },
-      { label: 'Ride Cost', value: `₹ ${estimates.cost}`, helper: 'Charged to rider' },
+      {
+        label: 'Price Per Person',
+        value: `₹ ${finalPricePerPerson.toFixed(2)}`,
+        helper: demoWeatherMode ? `Base: ₹${pricePerPerson.toFixed(2)} + Weather: ₹${weatherSurcharge.toFixed(2)} (15%)` : 'Per rider cost'
+      },
       {
         label: 'Driver Earning',
         value: `₹ ${estimates.driverEarning}`,
@@ -84,7 +94,7 @@ export default function RideConfirmation() {
       },
       { label: 'Platform Fee', value: `₹ ${estimates.platformFee}`, helper: '10% fee' },
     ];
-  }, [estimates, error, isLoading]);
+  }, [estimates, error, isLoading, demoWeatherMode]);
 
   if (!rideSummaryInput) {
     return null;
@@ -170,6 +180,37 @@ export default function RideConfirmation() {
         </div>
 
         <MiniMap start={rideSummaryInput.start} destination={rideSummaryInput.destination} height={260} />
+
+        {/* Demo Weather Toggle */}
+        <div className="rounded-3xl border-2 border-dashed border-gray-300 p-4 bg-gray-50">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <CloudRain size={20} className={demoWeatherMode ? "text-blue-600" : "text-gray-400"} />
+                <h3 className="font-bold text-black">Demo: Simulate Bad Weather</h3>
+              </div>
+              <p className="text-sm text-gray-600">
+                Test how pricing changes during bad weather conditions (+15% surcharge)
+              </p>
+            </div>
+            <button
+              onClick={() => setDemoWeatherMode(!demoWeatherMode)}
+              className={`px-6 py-3 rounded-lg font-semibold transition-all ${demoWeatherMode
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-black'
+                }`}
+            >
+              {demoWeatherMode ? '🌧️ Demo Active' : 'Enable Demo'}
+            </button>
+          </div>
+          {demoWeatherMode && (
+            <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800 font-medium">
+                ⚠️ DEMO MODE: Simulating bad weather conditions. Price increased by 15%.
+              </p>
+            </div>
+          )}
+        </div>
 
         {isLoading && (
           <div className="rounded-2xl border-2 border-dashed border-gray-300 p-5 text-center text-sm font-semibold text-gray-600">

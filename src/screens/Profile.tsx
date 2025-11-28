@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Camera, Heart, Star } from 'lucide-react';
+import { ArrowLeft, Camera, Heart, Star, ShieldCheck } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useAccessibility } from '../context/AccessibilityContext';
+// import { useAccessibility } from '../context/AccessibilityContext';
 import Button from '../components/Button';
 import Layout from '../components/Layout';
 
 export default function Profile() {
   const { navigateTo, userName, userRole, updateProfile, user, fetchUserProfile } = useApp();
-  const { isVoiceCommandMode, toggleVoiceCommandMode } = useAccessibility();
+  // const { isVoiceCommandMode, toggleVoiceCommandMode } = useAccessibility(); // Unused now
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -147,24 +147,29 @@ export default function Profile() {
                   <span className="ml-1 font-medium text-black">{user?.rating?.toFixed(1) || '5.0'}</span>
                 </div>
               </div>
+
+              {/* Verification Status */}
+              <div className="mt-4 flex items-center gap-3">
+                {user?.verificationStatus === 'verified' ? (
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                    <ShieldCheck size={14} />
+                    Verified Driver
+                  </div>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => navigateTo('verify-identity')}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <ShieldCheck size={14} />
+                    Verify Identity
+                  </Button>
+                )}
+              </div>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl mb-6 flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg">Voice Command Mode</h3>
-                <p className="text-sm text-gray-500">Use whole App using Voice Commands</p>
-              </div>
-              <button
-                onClick={toggleVoiceCommandMode}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${isVoiceCommandMode ? 'bg-black' : 'bg-gray-300'
-                  }`}
-              >
-                <span
-                  className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${isVoiceCommandMode ? 'translate-x-7' : 'translate-x-1'
-                    }`}
-                />
-              </button>
-            </div>
+
 
             {message && (
               <div className={`p-4 rounded-xl mb-6 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>

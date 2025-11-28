@@ -62,13 +62,13 @@ export default function Dashboard() {
                 </span>
               )}
             </button>
-            <Button variant="secondary" onClick={() => navigateTo('profile')} className="flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors">
+            <Button variant="secondary" onClick={() => navigateTo('profile')} className="hidden sm:flex items-center gap-2 border-2 border-black hover:bg-gray-100 transition-colors">
               <User size={18} />
               Profile
             </Button>
             <button
               onClick={handleLogout}
-              className="p-3 rounded-xl border-2 border-black hover:bg-red-50 hover:border-red-500 hover:text-red-600 transition-all"
+              className="hidden sm:block p-3 rounded-xl border-2 border-black hover:bg-red-50 hover:border-red-500 hover:text-red-600 transition-all"
               title="Sign Out"
             >
               <LogOut size={20} />

@@ -2,18 +2,13 @@ const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
+  // Log error for debugging
   console.error(err);
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
     const message = 'Resource not found';
     error = { message, statusCode: 404 };
-  }
-
-  // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    const message = Object.values(err.errors).map((val) => val.message).join(', ');
-    error = { message, statusCode: 400 };
   }
 
   // Mongoose duplicate key
@@ -23,9 +18,10 @@ const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 400 };
   }
 
-  if (err.name === 'TokenExpiredError') {
-    const message = 'Token expired';
-    error = { message, statusCode: 401 };
+  // Mongoose validation error
+  if (err.name === 'ValidationError') {
+    const message = Object.values(err.errors).map((val) => val.message).join(', ');
+    error = { message, statusCode: 400 };
   }
 
   // JWT errors
@@ -34,6 +30,10 @@ const errorHandler = (err, req, res, next) => {
     error = { message, statusCode: 401 };
   }
 
+  if (err.name === 'TokenExpiredError') {
+    const message = 'Token expired';
+    error = { message, statusCode: 401 };
+  }
 
   res.status(error.statusCode || 500).json({
     success: false,
@@ -42,5 +42,4 @@ const errorHandler = (err, req, res, next) => {
 };
 
 module.exports = errorHandler;
-
 

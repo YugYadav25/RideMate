@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, MicOff, Volume2, X } from 'lucide-react';
-import { useAccessibility } from '../context/AccessibilityContext';
+import { Mic, Volume2, X } from 'lucide-react';
+// import { useAccessibility } from '../context/AccessibilityContext';
 import { useApp } from '../context/AppContext';
 import { askGemini } from '../utils/geminiChat';
 
 const VoiceAssistant: React.FC = () => {
-    const { isVoiceCommandMode } = useAccessibility();
+    // const { isVoiceCommandMode } = useAccessibility();
     const { navigateTo } = useApp();
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
@@ -87,6 +87,33 @@ const VoiceAssistant: React.FC = () => {
         }
     };
 
+    const normalizeTime = (timeStr?: string): string | undefined => {
+        if (!timeStr) return undefined;
+
+        // Remove any non-time characters (like "approx", "around")
+        let cleanTime = timeStr.toLowerCase().replace(/[^0-9:apm\s]/g, '').trim();
+
+        // Handle AM/PM
+        if (cleanTime.includes('pm') || cleanTime.includes('am')) {
+            const isPM = cleanTime.includes('pm');
+            cleanTime = cleanTime.replace(/(am|pm)/, '').trim();
+            let [hours, minutes] = cleanTime.split(':').map(Number);
+
+            if (isPM && hours < 12) hours += 12;
+            if (!isPM && hours === 12) hours = 0;
+
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+
+        // Assume 24h if no AM/PM
+        const [hours, minutes] = cleanTime.split(':');
+        if (hours && minutes) {
+            return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+        }
+
+        return timeStr;
+    };
+
     const handleVoiceCommand = async (text: string) => {
         try {
             // 1. Parse command using Gemini
@@ -98,8 +125,11 @@ const VoiceAssistant: React.FC = () => {
                 setResponse(command.message);
             }
 
+
+
             if (command.intent === 'BOOK_RIDE') {
                 const { origin, destination } = command.entities || {};
+                const normalizedTime = normalizeTime(command.entities?.time);
 
                 if (origin && destination) {
                     // Geocode locations
@@ -114,6 +144,9 @@ const VoiceAssistant: React.FC = () => {
                             navigateTo('search-ride', {
                                 startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
                                 destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon },
+                                date: command.entities?.date,
+                                time: normalizedTime,
+                                seats: command.entities?.seats,
                                 autoSearch: true
                             });
                         }, 2000);
@@ -127,6 +160,40 @@ const VoiceAssistant: React.FC = () => {
                     setTimeout(() => {
                         setIsOpen(false);
                         navigateTo('search-ride');
+                    }, 2000);
+                }
+            } else if (command.intent === 'OFFER_RIDE') {
+                const { origin, destination } = command.entities || {};
+                const normalizedTime = normalizeTime(command.entities?.time);
+
+                if (origin && destination) {
+                    // Geocode locations
+                    const [originGeo, destGeo] = await Promise.all([
+                        import('../utils/weatherApi').then(m => m.geocodePlace(origin)),
+                        import('../utils/weatherApi').then(m => m.geocodePlace(destination))
+                    ]);
+
+                    if (originGeo && destGeo) {
+                        setTimeout(() => {
+                            setIsOpen(false);
+                            navigateTo('create-ride', {
+                                startLocation: { name: originGeo.name, lat: originGeo.lat, lng: originGeo.lon },
+                                destinationLocation: { name: destGeo.name, lat: destGeo.lat, lng: destGeo.lon },
+                                date: command.entities?.date,
+                                time: normalizedTime,
+                                seats: command.entities?.seats
+                            });
+                        }, 2000);
+                    } else {
+                        const errorMsg = "I couldn't find one of those locations. Please try again.";
+                        speak(errorMsg);
+                        setResponse(errorMsg);
+                    }
+                } else {
+                    // If locations are missing, just go to create-ride
+                    setTimeout(() => {
+                        setIsOpen(false);
+                        navigateTo('create-ride');
                     }, 2000);
                 }
             } else if (command.intent === 'NAVIGATE') {
@@ -156,72 +223,78 @@ const VoiceAssistant: React.FC = () => {
         }
     };
 
-    if (!isVoiceCommandMode) return null;
+    // if (!isVoiceCommandMode) return null; // Always active now
 
     return (
         <>
-            {/* Floating Mic Button - Moved to LEFT */}
-            <button
-                onClick={startListening}
-                className="fixed bottom-8 left-8 z-50 w-20 h-20 bg-black text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-105 transition-transform border-4 border-white"
-                aria-label="Voice Assistant"
-            >
-                <Mic size={40} />
-            </button>
+            {/* Voice Interface - Non-intrusive Popover */}
+            <div className={`fixed bottom-28 left-8 z-50 transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 w-80 border border-gray-200 dark:border-gray-700 relative">
+                    <button
+                        onClick={() => setIsOpen(false)}
+                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500"
+                    >
+                        <X size={20} />
+                    </button>
 
-            {/* Voice Interface Modal */}
-            {isOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-3xl p-8 w-full max-w-lg text-center relative animate-slide-in">
-                        <button
-                            onClick={() => setIsOpen(false)}
-                            className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100"
-                        >
-                            <X size={32} />
-                        </button>
-
-                        <div className="mb-8 flex justify-center">
-                            <div className={`p-6 rounded-full ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : 'bg-gray-100 text-black'}`}>
-                                {isListening ? <Mic size={64} /> : <Volume2 size={64} />}
-                            </div>
+                    <div className="flex flex-col items-center gap-4">
+                        <div className={`p-4 rounded-full transition-colors ${isListening ? 'bg-red-100 text-red-600 animate-pulse' : response.includes('Error') || response.includes('denied') ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-black'}`}>
+                            {isListening ? <Mic size={32} /> : <Volume2 size={32} />}
                         </div>
 
-                        <h2 className="text-3xl font-bold mb-4">
-                            {isListening ? "Listening..." : "I'm here to help"}
-                        </h2>
+                        <div className="text-center w-full">
+                            <h3 className="font-bold text-gray-800 dark:text-white mb-2">
+                                {isListening ? "Listening..." : isSpeaking ? "Speaking..." : response.includes('Error') ? "Error" : "How can I help?"}
+                            </h3>
 
-                        {transcript && (
-                            <div className="mb-6 p-4 bg-gray-50 rounded-xl border-2 border-gray-100">
-                                <p className="text-xl text-gray-600">"{transcript}"</p>
-                            </div>
-                        )}
+                            {(transcript || response) && (
+                                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 max-h-40 overflow-y-auto text-sm">
+                                    {transcript && <p className="text-gray-500 italic mb-2">"{transcript}"</p>}
+                                    {response && <p className={response.includes('Error') || response.includes('denied') ? "text-red-600 font-medium" : "text-gray-800 dark:text-gray-200"}>{response}</p>}
+                                </div>
+                            )}
+                        </div>
 
-                        {response && (
-                            <div className="mb-8">
-                                <p className="text-2xl font-medium text-black">{response}</p>
-                            </div>
-                        )}
-
-                        <div className="flex justify-center gap-4">
+                        <div className="flex gap-2 w-full">
                             {isListening ? (
                                 <button
                                     onClick={stopListening}
-                                    className="px-8 py-4 bg-red-500 text-white text-xl font-bold rounded-xl hover:bg-red-600 transition-colors"
+                                    className="flex-1 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 text-sm font-medium"
                                 >
-                                    Stop Listening
+                                    Stop
                                 </button>
                             ) : (
                                 <button
                                     onClick={startListening}
-                                    className="px-8 py-4 bg-black text-white text-xl font-bold rounded-xl hover:bg-gray-800 transition-colors"
+                                    className={`flex-1 py-2 ${response.includes('Error') ? 'bg-red-600 hover:bg-red-700' : 'bg-black hover:bg-gray-800'} text-white rounded-lg text-sm font-medium`}
                                 >
-                                    Speak Again
+                                    {response.includes('Error') ? 'Retry' : 'Speak'}
                                 </button>
                             )}
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
+
+            {/* Floating Mic Button */}
+            <button
+                onClick={() => {
+                    if (!isOpen) {
+                        setIsOpen(true);
+                        startListening();
+                    } else {
+                        setIsOpen(false);
+                        stopListening();
+                    }
+                }}
+                className={`fixed bottom-8 left-8 z-50 w-16 h-16 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 ${isListening
+                    ? 'bg-red-500 text-white scale-110 animate-pulse'
+                    : 'bg-black text-white hover:bg-gray-800 hover:scale-105'
+                    }`}
+                aria-label="Voice Assistant"
+            >
+                {isOpen ? <X size={32} /> : <Mic size={32} />}
+            </button>
         </>
     );
 };

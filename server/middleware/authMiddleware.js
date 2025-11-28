@@ -37,7 +37,6 @@ const driverMiddleware = (req, res, next) => {
   next();
 };
 
-
 module.exports = {
   authMiddleware,
   driverMiddleware,

@@ -15,7 +15,9 @@ import Rating from './screens/Rating';
 import RideConfirmation from './screens/RideConfirmation';
 import Vehicles from './screens/Vehicles';
 import PaymentPage from './screens/PaymentPage';
+import IdentityVerification from './screens/IdentityVerification';
 import Chatbot from './components/Chatbot';
+import VoiceAssistant from './components/VoiceAssistant';
 
 
 
@@ -39,6 +41,7 @@ function AppRouter() {
     'ride-confirmation': <RideConfirmation />,
     vehicles: <Vehicles />,
     payment: <PaymentPage />,
+    'verify-identity': <IdentityVerification />,
   };
 
   return screens[currentScreen] || <Landing />;
@@ -51,6 +54,7 @@ function App() {
     <AppProvider>
       <AppRouter />
       <ChatbotWrapper />
+      <VoiceAssistant />
     </AppProvider>
   );
 }

@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Verify JWT token and attach user to request
 const authMiddleware = async (req, res, next) => {
   try {
     const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -24,15 +23,6 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-// Middleware to check if user is a driver
-const driverMiddleware = (req, res, next) => {
-  if (req.user.role !== 'driver') {
-    return res.status(403).json({ message: 'Access denied. Driver role required.' });
-  }
-  next();
-};
-
-// Middleware to check if user is a rider
 const riderMiddleware = (req, res, next) => {
   if (req.user.role !== 'rider') {
     return res.status(403).json({ message: 'Access denied. Rider role required.' });
@@ -40,9 +30,16 @@ const riderMiddleware = (req, res, next) => {
   next();
 };
 
+const driverMiddleware = (req, res, next) => {
+  if (req.user.role !== 'driver') {
+    return res.status(403).json({ message: 'Access denied. Driver role required.' });
+  }
+  next();
+};
+
+
 module.exports = {
   authMiddleware,
   driverMiddleware,
   riderMiddleware,
 };
-
